@@ -1,0 +1,38 @@
+name: Comment on PR 14
+
+on:
+  push:
+    branches:
+      - main
+      - copilot/add-implementation-plan-sqlite
+
+permissions:
+  issues: write
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add comment to PR 14
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const commentBody = "The implementation plan for persistent database storage (using SQLite) has been added to the README.md. Thank you for your ideas and feedback!";
+
+            // Check if the comment already exists to avoid duplicates
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: 14,
+            });
+
+            const alreadyCommented = comments.data.some(c => c.body === commentBody);
+
+            if (!alreadyCommented) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: 14,
+                body: commentBody
+              });
+            }
