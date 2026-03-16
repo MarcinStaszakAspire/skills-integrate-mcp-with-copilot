@@ -1,6 +1,7 @@
 name: Create Enhancement Issues
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - ".github/steps/1-step-issues/enhancement/*.md"
@@ -33,7 +34,7 @@ jobs:
               repo: context.repo.repo,
               state: 'all',
             });
-            const existingTitles = new Set(existingIssues.map(i => i.title));
+            const existingTitlesLower = new Set(existingIssues.map(i => i.title.toLowerCase()));
 
             const dir = '.github/steps/1-step-issues/enhancement/';
             const files = fs.readdirSync(dir).filter(f => f.endsWith('.md'));
@@ -45,10 +46,11 @@ jobs:
 
               // Use the filename (without .md extension) as the issue title
               const filenameTitle = path.basename(file, '.md');
-              // Also check the H1 heading title (used by earlier issues)
-              const h1Title = content.split('\n')[0].replace(/^#+\s*/, '').trim();
+              // Also check the H1 heading title (used by earlier issues); search for first heading line
+              const h1Line = content.split('\n').find(line => /^#+\s+/.test(line)) || '';
+              const h1Title = h1Line.replace(/^#+\s*/, '').trim();
 
-              if (existingTitles.has(filenameTitle) || existingTitles.has(h1Title)) {
+              if (existingTitlesLower.has(filenameTitle.toLowerCase()) || existingTitlesLower.has(h1Title.toLowerCase())) {
                 console.log(`Skipping "${file}" - issue already exists.`);
                 continue;
               }
