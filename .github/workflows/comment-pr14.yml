@@ -1,0 +1,24 @@
+name: Comment on PR 14
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  pull-requests: write
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add comment to PR 14
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: 14,
+              body: "The implementation plan for persistent database storage (using SQLite) has been added to the README.md. Thank you for your ideas and feedback!"
+            });
