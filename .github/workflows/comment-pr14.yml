@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - copilot/add-implementation-plan-sqlite
 
 permissions:
   pull-requests: write
