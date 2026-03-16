@@ -7,7 +7,7 @@ on:
       - copilot/add-implementation-plan-sqlite
 
 permissions:
-  pull-requests: write
+  issues: write
 
 jobs:
   comment:
@@ -17,9 +17,22 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            await github.rest.issues.createComment({
+            const commentBody = "The implementation plan for persistent database storage (using SQLite) has been added to the README.md. Thank you for your ideas and feedback!";
+
+            // Check if the comment already exists to avoid duplicates
+            const comments = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: 14,
-              body: "The implementation plan for persistent database storage (using SQLite) has been added to the README.md. Thank you for your ideas and feedback!"
             });
+
+            const alreadyCommented = comments.data.some(c => c.body === commentBody);
+
+            if (!alreadyCommented) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: 14,
+                body: commentBody
+              });
+            }
