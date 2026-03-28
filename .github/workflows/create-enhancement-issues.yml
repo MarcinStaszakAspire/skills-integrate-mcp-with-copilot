@@ -1,0 +1,67 @@
+name: Create Enhancement Issues
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/steps/1-step-issues/enhancement/*.md"
+      - ".github/workflows/create-enhancement-issues.yml"
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  create_issues:
+    name: Create missing enhancement issues
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Create issues from enhancement markdown files
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Fetch all existing issues to avoid duplicates
+            const existingIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+            });
+            const existingTitlesLower = new Set(existingIssues.map(i => i.title.toLowerCase()));
+
+            const dir = '.github/steps/1-step-issues/enhancement/';
+            const files = fs.readdirSync(dir).filter(f => f.endsWith('.md'));
+            console.log(`Found ${files.length} enhancement markdown files.`);
+
+            for (const file of files) {
+              const fullPath = path.join(dir, file);
+              const content = fs.readFileSync(fullPath, 'utf8');
+
+              // Use the filename (without .md extension) as the issue title
+              const filenameTitle = path.basename(file, '.md');
+              // Also check the H1 heading title (used by earlier issues); search for first heading line
+              const h1Line = content.split('\n').find(line => /^#+\s+/.test(line)) || '';
+              const h1Title = h1Line.replace(/^#+\s*/, '').trim();
+
+              if (existingTitlesLower.has(filenameTitle.toLowerCase()) || existingTitlesLower.has(h1Title.toLowerCase())) {
+                console.log(`Skipping "${file}" - issue already exists.`);
+                continue;
+              }
+
+              const issue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: filenameTitle,
+                body: content,
+                labels: ['enhancement'],
+              });
+
+              console.log(`Created issue #${issue.data.number}: "${filenameTitle}" from ${file}`);
+            }
